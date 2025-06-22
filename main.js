@@ -1,4 +1,4 @@
-import { Client, Collection, GatewayIntentBits } from 'discord.js';
+import { Client, Collection, GatewayIntentBits, PermissionFlagsBits } from 'discord.js';
 import 'dotenv/config';
 import express from 'express';
 import session from 'express-session';
@@ -51,20 +51,15 @@ app.use(passport.session());
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((obj, done) => done(null, obj));
 
-passport.use(
-  new DiscordStrategy(
-    {
-      clientID: process.env.DISCORD_CLIENT_ID,
-      clientSecret: process.env.DISCORD_CLIENT_SECRET,
-      callbackURL: process.env.REDIRECT_URI,
-      scope: ['identify', 'guilds'],
-    },
-    (accessToken, refreshToken, profile, done) => {
-      // You could save profile info to a DB here
-      return done(null, profile);
-    }
-  )
-);
+passport.use(new DiscordStrategy({
+  clientID: process.env.DISCORD_CLIENT_ID,
+  clientSecret: process.env.DISCORD_CLIENT_SECRET,
+  callbackURL: process.env.REDIRECT_URI,
+  scope: ['identify', 'guilds'],
+}, (accessToken, refreshToken, profile, done) => {
+  profile.accessToken = accessToken;
+  return done(null, profile);
+}));
 
 // ====== Routes ======
 
@@ -97,6 +92,43 @@ app.get('/api/user', checkAuth, (req, res) => {
     avatar: req.user.avatar
   });
 });
+
+app.get('/api/mutual-guilds', checkAuth, async (req, res) => {
+  try {
+    // Step 1: Get user guilds using Discord API
+    const response = await fetch('https://discord.com/api/users/@me/guilds', {
+      headers: {
+        Authorization: `Bearer ${req.user.accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      return res.status(500).json({ error: 'Failed to fetch user guilds' });
+    }
+
+    const userGuilds = await response.json();
+
+    // Step 2: Get bot guilds from Discord.js client
+    const botGuilds = client.guilds.cache;
+
+    // Step 3: Match guilds where:
+    // - bot is in the server
+    // - user has MANAGE_GUILD permission
+    const mutualGuilds = userGuilds.filter(guild => {
+      const botGuild = botGuilds.get(guild.id);
+      if (!botGuild) return false;
+
+      const perms = BigInt(guild.permissions); // convert to BigInt
+      return (perms & BigInt(PermissionFlagsBits.ManageGuild)) === BigInt(PermissionFlagsBits.ManageGuild);
+    });
+
+    res.json(mutualGuilds);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Something went wrong.' });
+  }
+});
+
 
 app.get('/logout', (req, res, next) => {
   req.logout(function (err) {
