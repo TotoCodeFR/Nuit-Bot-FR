@@ -37,12 +37,12 @@ const app = express();
 
   const redisClient = createClient({
     url: process.env.UPSTASH_REDIS_URL,
-    password: process.env.UPSTASH_REDIS_PASSWORD,
-    socket: {
-      tls: true,
-      rejectUnauthorized: false,
-    },
-  });
+        socket: {
+            tls: true,
+            rejectUnauthorized: false,
+        },
+    });
+
 
   redisClient.on('error', (err) => console.error('Redis Client Error', err));
 
