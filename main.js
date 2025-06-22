@@ -4,7 +4,7 @@ import express from 'express';
 import session from 'express-session';
 import passport from 'passport';
 import { Strategy as DiscordStrategy } from 'passport-discord';
-import connectRedis from 'connect-redis';
+import * as connectRedis from 'connect-redis';
 import { createClient } from 'redis';
 import { loadCommands, loadEvents } from './utility/load.js';
 import { log } from './utility/log.js';
@@ -34,7 +34,7 @@ const app = express();
 
 // ====== Upstash Redis session store setup ======
 
-const RedisStore = connectRedis(session);
+const RedisStore = connectRedis.default(session);
 
 const redisClient = createClient({
   url: process.env.UPSTASH_REDIS_URL,
