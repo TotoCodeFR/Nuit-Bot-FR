@@ -89,7 +89,7 @@ app.get('/ping', (req, res) => {
 
 app.get('/dashboard', checkAuth, (req, res) => {
   const user = req.user;
-  res.sendFile(path.join(__dirname, 'public', 'dashboard', 'index.html'));
+  res.sendFile(path.join(__dirname, 'panel', 'dashboard', 'index.html'));
 });
 
 app.get('/api/user', checkAuth, (req, res) => {
