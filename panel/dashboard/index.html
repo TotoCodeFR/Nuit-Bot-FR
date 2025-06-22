@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+</head>
+<body>
+  <h1 id="welcome">Loading...</h1>
+  <img id="avatar" width="128" />
+
+  <script>
+    fetch('/api/user')
+      .then(res => {
+        if (res.status === 401) return window.location.href = '/auth/discord';
+        return res.json();
+      })
+      .then(user => {
+        document.getElementById('welcome').innerText = `Welcome, ${user.username}#${user.discriminator}`;
+        document.getElementById('avatar').src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+      })
+      .catch(err => console.error('Failed to load user:', err));
+  </script>
+</body>
+</html>

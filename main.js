@@ -6,6 +6,10 @@ import passport from 'passport';
 import { Strategy as DiscordStrategy } from 'passport-discord';
 import { loadCommands, loadEvents } from './utility/load.js';
 import { log } from './utility/log.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 client.commands = new Collection();
@@ -79,20 +83,22 @@ function checkAuth(req, res, next) {
   res.redirect('/');
 }
 
-app.use(express.static('panel'));
-
 app.get('/ping', (req, res) => {
   res.send('Le bot est en ligne et fonctionne correctement !');
 });
 
 app.get('/dashboard', checkAuth, (req, res) => {
   const user = req.user;
-  res.send(`
-    <h1>Bienvenue, ${user.username}#${user.discriminator}</h1>
-    <img src="https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png" alt="avatar" />
-    <p>ID: ${user.id}</p>
-    <p><a href="/logout">Se déconnecter</a></p>
-  `);
+  res.sendFile(path.join(__dirname, 'public', 'dashboard', 'index.html'));
+});
+
+app.get('/api/user', checkAuth, (req, res) => {
+  res.json({
+    username: req.user.username,
+    discriminator: req.user.discriminator,
+    id: req.user.id,
+    avatar: req.user.avatar
+  });
 });
 
 app.get('/logout', (req, res, next) => {
