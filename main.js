@@ -110,6 +110,10 @@ app.get('/logout', (req, res, next) => {
   });
 });
 
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'panel', 'index.html'));
+});
+
 // Start Express server
 app.listen(process.env.PORT, () => {
   console.log('✅ Serveur connecté!');
