@@ -1,5 +1,6 @@
 import { Client, Collection, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
 import 'dotenv/config';
+import express from 'express';
 import { loadCommands, loadEvents } from './utility/load.js';
 import { log } from './utility/log.js';
 
@@ -19,4 +20,16 @@ client.once('ready', () => {
         description: 'Le bot a été démarré avec succès.',
         color: '#64ff64'
     }, testGuild);
+});
+
+const app = express();
+
+app.use(express.static('panel'));
+
+app.get('/ping', (req, res) => {
+    res.send('Le bot est en ligne et fonctionne correctement !');
+});
+
+app.listen(process.env.PORT, () => {
+    console.log('✅ Serveur connecté!');
 });
