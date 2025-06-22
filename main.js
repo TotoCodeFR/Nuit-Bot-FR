@@ -83,13 +83,10 @@ function checkAuth(req, res, next) {
   res.redirect('/');
 }
 
+app.use(express.static(path.join(__dirname, 'panel')));
+
 app.get('/ping', (req, res) => {
   res.send('Le bot est en ligne et fonctionne correctement !');
-});
-
-app.get('/dashboard', checkAuth, (req, res) => {
-  const user = req.user;
-  res.sendFile(path.join(__dirname, 'panel', 'dashboard', 'index.html'));
 });
 
 app.get('/api/user', checkAuth, (req, res) => {

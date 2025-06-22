@@ -79,7 +79,7 @@ body, html {
     z-index: 1; /* Above the stars */
 }
 
-#main-btn {
+#login {
     background-color: #5865F2; /* Discord blurple */
     border: none;
     border-radius: 6px;
@@ -92,6 +92,6 @@ body, html {
     font-family: 'Poppins', sans-serif;
 }
 
-#main-btn:hover {
+#login:hover {
     background-color: #4752c4;
 }
