@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { MessageFlags, SlashCommandBuilder } from 'discord.js';
 import { loadConfig, writeToConfig } from '../../utility/server_config.js';
 
 export default {
@@ -34,7 +34,7 @@ export default {
             writeToConfig(interaction.guild.id, currentConfig);
 
             await user.send(`Vous avez été averti dans le serveur ${interaction.guild.name} pour la raison suivante : ${reason}`);
-            await interaction.reply({ content: `Avertissement envoyé à ${user.username} pour la raison : ${reason}`, ephemeral: true });
+            await interaction.reply({ content: `Avertissement envoyé à ${user.username} pour la raison : ${reason}`, flags: MessageFlags.Ephemeral });
             console.log(`Avertissement envoyé à ${user.username} dans le serveur ${interaction.guild.name} pour la raison : ${reason}`);
         } catch (error) {
             console.error('Erreur lors de l\'envoi du message privé :', error);
