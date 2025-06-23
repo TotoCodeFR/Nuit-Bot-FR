@@ -14,9 +14,11 @@ export default {
             .setDescription('La raison de l\'avertissement')
             .setRequired(false)
         ),
-	async execute(interaction) {
+    async execute(interaction) {
         const user = interaction.options.getUser('utilisateur');
         const reason = interaction.options.getString('raison') || 'Aucune raison fournie';
+
+        await interaction.deferReply({ ephemeral: true });
         
         try {
             const currentConfig = loadConfig(interaction.guild.id);
@@ -34,11 +36,11 @@ export default {
             writeToConfig(interaction.guild.id, currentConfig);
 
             await user.send(`Vous avez été averti dans le serveur ${interaction.guild.name} pour la raison suivante : ${reason}`);
-            await interaction.reply({ content: `Avertissement envoyé à ${user.username} pour la raison : ${reason}`, flags: MessageFlags.Ephemeral });
+            await interaction.editReply({ content: `Avertissement envoyé à ${user.username} pour la raison : ${reason}` });
             console.log(`Avertissement envoyé à ${user.username} dans le serveur ${interaction.guild.name} pour la raison : ${reason}`);
         } catch (error) {
             console.error('Erreur lors de l\'envoi du message privé :', error);
-            await interaction.reply({ content: 'Impossible d\'envoyer un message privé à cet utilisateur.', ephemeral: true });
+            await interaction.editReply({ content: 'Impossible d\'envoyer un message privé à cet utilisateur.' });
         }
-	},
+    },
 };
