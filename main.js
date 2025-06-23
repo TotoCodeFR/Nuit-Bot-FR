@@ -58,7 +58,8 @@ passport.use(new DiscordStrategy({
   scope: ['identify', 'guilds'],
 }, (accessToken, refreshToken, profile, done) => {
   profile.accessToken = accessToken;
-  return done(null, profile);
+  // You can optionally fetch and attach guilds if needed
+  done(null, profile);
 }));
 
 // ====== Routes ======
@@ -77,6 +78,47 @@ function checkAuth(req, res, next) {
   if (req.isAuthenticated()) return next();
   res.redirect('/');
 }
+
+function checkDashboardAccess(req, res, next) {
+  if (!req.isAuthenticated()) return res.redirect('/auth/discord');
+
+  const guildId = req.params.serverId;
+  const userGuilds = req.user.guilds; // Provided by passport-discord
+  const botGuild = client.guilds.cache.get(guildId);
+
+  if (!botGuild) return res.status(404).send('Bot not in this server.');
+
+  const matchingGuild = userGuilds.find(g => g.id === guildId);
+  if (!matchingGuild) return res.status(403).send('User not in this server.');
+
+  const perms = BigInt(matchingGuild.permissions);
+  const hasManage = (perms & BigInt(PermissionFlagsBits.ManageGuild)) === BigInt(PermissionFlagsBits.ManageGuild);
+
+  if (!hasManage) return res.status(403).send('Missing Manage Server permission.');
+
+  // Pass bot + user guilds to route
+  req.botGuild = botGuild;
+  req.userGuild = matchingGuild;
+  next();
+}
+
+app.get('/dashboard/:serverId', checkDashboardAccess, (req, res) => {
+  res.sendFile('dashboard/config/index.html', { root: './panel' });
+});
+
+app.use('/assets', express.static('panel'));
+
+app.get('/dashboard/:serverId/:page', checkDashboardAccess, (req, res) => {
+  const { page } = req.params;
+
+  // Whitelist allowed pages
+  const allowedPages = ['general'];
+  if (!allowedPages.includes(page)) {
+    return res.status(404).send('Page not found.');
+  }
+
+  res.sendFile(path.join(__dirname, 'panel/dashboard/config/', `${page}`, 'index.html'));
+});
 
 app.use(express.static(path.join(__dirname, 'panel')));
 
