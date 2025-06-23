@@ -72,6 +72,19 @@ export default {
 
             if (confirmation.customId === 'confirm') {
                 await interaction.guild.members.ban(member, { reason: reason });
+
+                // Gestion du bannissement temporaire
+                const ms = parseDuration(duration);
+                if (ms) {
+                    setTimeout(async () => {
+                        try {
+                            await interaction.guild.members.unban(user.id, 'Fin du bannissement temporaire');
+                        } catch (e) {
+                            // L'utilisateur est peut-être déjà débanni
+                        }
+                    }, ms);
+                }
+
                 const completedEmbed = new EmbedBuilder()
                     .setColor('#64ff64')
                     .setTitle('Bannir un utilisateur')
@@ -97,3 +110,38 @@ export default {
         }
 	},
 };
+
+function parseDuration(str) {
+    if (!str) return null;
+    str = str.toLowerCase().replace(/\s/g, '');
+    const regex = /(\d+)\s*(j|jour|jours|h|heure|heures|m|min|minute|minutes|s|sec|seconde|secondes)/g;
+    let match, ms = 0;
+    while ((match = regex.exec(str)) !== null) {
+        const value = parseInt(match[1]);
+        switch (match[2]) {
+            case 'j':
+            case 'jour':
+            case 'jours':
+                ms += value * 24 * 60 * 60 * 1000;
+                break;
+            case 'h':
+            case 'heure':
+            case 'heures':
+                ms += value * 60 * 60 * 1000;
+                break;
+            case 'm':
+            case 'min':
+            case 'minute':
+            case 'minutes':
+                ms += value * 60 * 1000;
+                break;
+            case 's':
+            case 'sec':
+            case 'seconde':
+            case 'secondes':
+                ms += value * 1000;
+                break;
+        }
+    }
+    return ms || null;
+}
