@@ -35,6 +35,7 @@ export default {
 
             await user.send(`Vous avez été averti dans le serveur ${interaction.guild.name} pour la raison suivante : ${reason}`);
             await interaction.reply({ content: `Avertissement envoyé à ${user.username} pour la raison : ${reason}`, ephemeral: true });
+            console.log(`Avertissement envoyé à ${user.username} dans le serveur ${interaction.guild.name} pour la raison : ${reason}`);
         } catch (error) {
             console.error('Erreur lors de l\'envoi du message privé :', error);
             await interaction.reply({ content: 'Impossible d\'envoyer un message privé à cet utilisateur.', ephemeral: true });
