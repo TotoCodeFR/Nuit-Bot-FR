@@ -18,7 +18,7 @@ export default {
         const user = interaction.options.getUser('utilisateur');
         const reason = interaction.options.getString('raison') || 'Aucune raison fournie';
 
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         
         try {
             const currentConfig = loadConfig(interaction.guild.id);

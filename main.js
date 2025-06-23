@@ -120,6 +120,10 @@ app.get('/dashboard/:serverId/:page', checkDashboardAccess, (req, res) => {
   res.sendFile(path.join(__dirname, 'panel/dashboard/config/', `${page}`, 'index.html'));
 });
 
+app.get('/api/status', (req, res) => {
+  const status = client.ws.status === 0 ? '🟢 En ligne' : '🔴 Hors ligne';
+  res.send({status});
+});
 app.use(express.static(path.join(__dirname, 'panel')));
 
 app.get('/ping', (req, res) => {
