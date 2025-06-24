@@ -1,4 +1,4 @@
-import { Client, Collection, GatewayIntentBits, PermissionFlagsBits, EmbedBuilder, ButtonBuilder, ActionRowBuilder } from 'discord.js';
+import { Client, Collection, GatewayIntentBits, PermissionFlagsBits, EmbedBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle } from 'discord.js';
 import 'dotenv/config';
 import express from 'express';
 import session from 'express-session';
@@ -37,18 +37,34 @@ client.once('ready', () => {
     .setTitle('Rôles du serveur')
     .setDescription('Cliquez sur les boutons ci-dessous pour obtenir les rôles correspondants.')
     .setTimestamp();
-  
+
   const notifsMajBtn = new ButtonBuilder()
     .setCustomId('notifs_maj')
     .setLabel('Notifications Mises à Jour')
-    .setStyle('Primary');
+    .setStyle(ButtonStyle.Primary);
 
-  const row1 = new ActionRowBuilder()
-    .addComponents(notifsMajBtn);
+  const row1 = new ActionRowBuilder().addComponents(notifsMajBtn);
 
-  client.guilds.cache.get('1385946310347329647').channels.cache.get('1387062987323343019').send({
-    embeds: [ rolesEmbed ],
-    components: [ row1 ]
+  // Get your target channel
+  const guild = client.guilds.cache.get('1385946310347329647');
+  const channel = guild.channels.cache.get('1387062987323343019');
+
+  // Check the last 10 messages to see if your embed is already there
+  channel.messages.fetch({ limit: 10 }).then(messages => {
+    const found = messages.some(msg => {
+      return msg.embeds.length > 0 &&
+        msg.embeds[0].title === 'Rôles du serveur';
+    });
+
+    if (!found) {
+      // Send embed if not already there
+      channel.send({
+        embeds: [rolesEmbed],
+        components: [row1]
+      });
+    } else {
+      console.log('Embed already exists in channel. Not sending again.');
+    }
   });
 });
 
