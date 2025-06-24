@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 function log(data, guild) {
 	const config = loadConfig(guild.id);
 
-	const channel = guild.channels.fetch(config.salonLog)
+	const channel = guild.channels.fetch(config.logChannel)
 
 	const embed = new EmbedBuilder()
 		.setColor(data.color || '#0099ff')
