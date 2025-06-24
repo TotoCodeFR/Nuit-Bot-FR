@@ -19,6 +19,10 @@ export default {
         const reason = interaction.options.getString('raison') || 'Aucune raison fournie';
 
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+        if (!interaction.user.permissions.has('ManageGuild')) {
+            return interaction.editReply({ content: 'Vous n\'avez pas la permission d\'avertir un utilisateur sur ce serveur.', flags: MessageFlags.Ephemeral });
+        }
         
         try {
             const currentConfig = loadConfig(interaction.guild.id);

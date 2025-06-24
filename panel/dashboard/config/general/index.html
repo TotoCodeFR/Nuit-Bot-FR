@@ -6,8 +6,26 @@
     <title>Général · Tableau de bord Nuit</title>
 </head>
 <body>
-    <h1>⚙️ · Général<h1>
-    <p id="statut-bot">🔄️ Chargement...</p>
+    <div id="app">
+        <div id="sidebar">
+            <button class="active" id="general">⚙️ · Général</button>
+            <button class="" id="moderation">🔨 · Modération</button>
+        </div>
+        <div id="dashboard">
+            <h1>⚙️ · Général<h1>
+            <p id="statut-bot">🔄️ Chargement...</p>
+            <h2>Salon de logs</h2>
+            <select id="log-channel-select" name="log-channel">
+                <option value="" disabled selected>-- Sélectionner un salon --</option>
+                <option value="general">#général</option>
+                <option value="logs">#logs</option>
+                <option value="modération">#modération</option>
+            </select>
+            <button id="save-log-channel">Enregistrer</button>
+        </div>
+    </div>
+
+    <link rel="stylesheet" href="/assets/dashboard/config/general/style.css">
 
     <script src="/assets/dashboard/config/general/script.js"></script>
 </body>

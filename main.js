@@ -8,6 +8,7 @@ import { loadCommands, loadEvents } from './utility/load.js';
 import { log } from './utility/log.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { writeToConfig, loadConfig } from './utility/server_config.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -33,6 +34,9 @@ client.once('ready', () => {
 });
 
 const app = express();
+
+// Middleware to parse JSON bodies
+app.use(express.json());
 
 // ====== In-memory session setup ======
 app.use(
@@ -175,6 +179,57 @@ app.get('/api/mutual-guilds', checkAuth, async (req, res) => {
   }
 });
 
+app.get('/api/get-channels', checkAuth, async (req, res) => {
+  const guildId = req.query.serverId;
+  const guild = client.guilds.cache.get(guildId);
+  if (!guild) {
+    return res.status(404).json({ error: 'Guild not found' });
+  }
+  const channels = guild.channels.cache
+    .filter(channel => channel.isTextBased())
+    .map(channel => ({ id: channel.id, name: channel.name }));
+    res.json({ channels });
+});
+
+app.post('/api/save-log-channel', checkAuth, async (req, res) => {
+  const guildId = req.query.serverId;
+  const guild = client.guilds.cache.get(guildId);
+  if (!guild) {
+    return res.status(404).json({ error: 'Guild not found' });
+  }
+
+  const { logChannel } = req.body;
+  if (!logChannel) {
+    return res.status(400).json({ error: 'Log channel is required' });
+  }
+
+  // Here you would save the log channel to your config
+  // For example, using a utility function to write to a config file
+  const logChannelObj = guild.channels.cache.get(logChannel);
+  if (!logChannelObj) {
+    return res.status(400).json({ error: 'Log channel not found in this guild.' });
+  }
+  writeToConfig(guildId, { logChannel: logChannelObj.id });
+  res.json({ success: true, logChannel: logChannelObj.id });
+});
+
+// Endpoint to get the current log channel for a guild
+app.get('/api/get-log-channel', checkAuth, async (req, res) => {
+  const guildId = req.query.serverId;
+  if (!guildId) {
+    return res.status(400).json({ error: 'Missing serverId' });
+  }
+  try {
+    const config = loadConfig(guildId);
+    if (!config || !config.logChannel) {
+      return res.json({ logChannel: null });
+    }
+    return res.json({ logChannel: config.logChannel });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Could not load log channel' });
+  }
+});
 
 app.get('/logout', (req, res, next) => {
   req.logout(function (err) {
