@@ -1,4 +1,4 @@
-import { Client, Collection, GatewayIntentBits, PermissionFlagsBits } from 'discord.js';
+import { Client, Collection, GatewayIntentBits, PermissionFlagsBits, EmbedBuilder, ButtonBuilder, ActionRowBuilder } from 'discord.js';
 import 'dotenv/config';
 import express from 'express';
 import session from 'express-session';
@@ -31,6 +31,25 @@ client.once('ready', () => {
     },
     testGuild
   );
+
+  const rolesEmbed = new EmbedBuilder()
+    .setColor('#5865F2')
+    .setTitle('Rôles du serveur')
+    .setDescription('Cliquez sur les boutons ci-dessous pour obtenir les rôles correspondants.')
+    .setTimestamp();
+  
+  const notifsMajBtn = new ButtonBuilder()
+    .setCustomId('notifs_maj')
+    .setLabel('Notifications Mises à Jour')
+    .setStyle('Primary');
+
+  const row1 = new ActionRowBuilder()
+    .addComponents(notifsMajBtn);
+
+  client.guilds.cache.get('1385946310347329647').channels.cache.get('1387062987323343019').send({
+    embeds: [ rolesEmbed ],
+    components: [ row1 ]
+  });
 });
 
 const app = express();
