@@ -29,7 +29,8 @@ client.once('ready', () => {
       description: 'Le bot a été démarré avec succès.',
       color: '#64ff64',
     },
-    testGuild
+    testGuild,
+    '1385989726082957412'
   );
 
   const rolesEmbed = new EmbedBuilder()
@@ -45,11 +46,11 @@ client.once('ready', () => {
 
   const row1 = new ActionRowBuilder().addComponents(notifsMajBtn);
 
-  // Get your target channel
+  // Le salon où envoyer l'embed
   const guild = client.guilds.cache.get('1385946310347329647');
   const channel = guild.channels.cache.get('1387062987323343019');
 
-  // Check the last 10 messages to see if your embed is already there
+  // Est-ce que l'embed existe déjà ?
   channel.messages.fetch({ limit: 10 }).then(messages => {
     const found = messages.some(msg => {
       return msg.embeds.length > 0 &&
@@ -57,23 +58,21 @@ client.once('ready', () => {
     });
 
     if (!found) {
-      // Send embed if not already there
+      // On envoie l'embed si il n'existe pas
       channel.send({
         embeds: [rolesEmbed],
         components: [row1]
       });
-    } else {
-      console.log('Embed already exists in channel. Not sending again.');
     }
   });
 });
 
 const app = express();
 
-// Middleware to parse JSON bodies
+// Permet d'utiliser JSON dans les requêtes
 app.use(express.json());
 
-// ====== In-memory session setup ======
+// ====== Setup sessions Discord depuis la mémoire (A CHANGER) ======
 app.use(
   session({
     secret: process.env.SESSION_SECRET || 'defaultsecret',
@@ -82,7 +81,7 @@ app.use(
   })
 );
 
-// ====== Passport and Discord OAuth2 setup ======
+// ====== Passport + Applis autorisées Discord ======
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -97,11 +96,10 @@ passport.use(new DiscordStrategy({
   scope: ['identify', 'guilds'],
 }, (accessToken, refreshToken, profile, done) => {
   profile.accessToken = accessToken;
-  // You can optionally fetch and attach guilds if needed
   done(null, profile);
 }));
 
-// ====== Routes ======
+// ====== Chemins web ======
 
 app.get('/auth/discord', passport.authenticate('discord'));
 
@@ -122,20 +120,20 @@ function checkDashboardAccess(req, res, next) {
   if (!req.isAuthenticated()) return res.redirect('/auth/discord');
 
   const guildId = req.params.serverId;
-  const userGuilds = req.user.guilds; // Provided by passport-discord
+  const userGuilds = req.user.guilds; // (Donné par passport Discord)
   const botGuild = client.guilds.cache.get(guildId);
 
-  if (!botGuild) return res.status(404).send('Bot not in this server.');
+  if (!botGuild) return res.status(404).send('Le bot ne se trouve pas dans ce serveur.');
 
   const matchingGuild = userGuilds.find(g => g.id === guildId);
-  if (!matchingGuild) return res.status(403).send('User not in this server.');
+  if (!matchingGuild) return res.status(403).send('L\'utilisateur n\'est pas dans ce serveur.');
 
   const perms = BigInt(matchingGuild.permissions);
   const hasManage = (perms & BigInt(PermissionFlagsBits.ManageGuild)) === BigInt(PermissionFlagsBits.ManageGuild);
 
-  if (!hasManage) return res.status(403).send('Missing Manage Server permission.');
+  if (!hasManage) return res.status(403).send('L\'utilisateur manque la permission Gérer le serveur.');
 
-  // Pass bot + user guilds to route
+  // Donne le bot et l'utilisateur dans la requête pour les utiliser plus tard
   req.botGuild = botGuild;
   req.userGuild = matchingGuild;
   next();
@@ -150,10 +148,9 @@ app.use('/assets', express.static('panel'));
 app.get('/dashboard/:serverId/:page', checkDashboardAccess, (req, res) => {
   const { page } = req.params;
 
-  // Whitelist allowed pages
-  const allowedPages = ['general'];
+  const allowedPages = ['general', 'moderation'];
   if (!allowedPages.includes(page)) {
-    return res.status(404).send('Page not found.');
+    return res.status(404).send('Page introuvable.');
   }
 
   res.sendFile(path.join(__dirname, 'panel/dashboard/config/', `${page}`, 'index.html'));
@@ -180,7 +177,7 @@ app.get('/api/user', checkAuth, (req, res) => {
 
 app.get('/api/mutual-guilds', checkAuth, async (req, res) => {
   try {
-    // Step 1: Get user guilds using Discord API
+    // Etape 1 : Récupérer les serveurs de l'utilisateur via l'API Discord
     const response = await fetch('https://discord.com/api/users/@me/guilds', {
       headers: {
         Authorization: `Bearer ${req.user.accessToken}`,
@@ -188,17 +185,17 @@ app.get('/api/mutual-guilds', checkAuth, async (req, res) => {
     });
 
     if (!response.ok) {
-      return res.status(500).json({ error: 'Failed to fetch user guilds' });
+      return res.status(500).json({ error: 'Impossible de récupérer les serveurs de l\'utilisateur' });
     }
 
     const userGuilds = await response.json();
 
-    // Step 2: Get bot guilds from Discord.js client
+    // Etape 2 : Récupérer les serveurs du bot
     const botGuilds = client.guilds.cache;
 
-    // Step 3: Match guilds where:
-    // - bot is in the server
-    // - user has MANAGE_GUILD permission
+    // Etape 3 : Filtrer les serveurs pour ne garder que ceux où :
+    // - le bot est dans le serveur 
+    // - l'utilisateur a la permission de gérer le serveur (ManageGuild)
     const mutualGuilds = userGuilds.filter(guild => {
       const botGuild = botGuilds.get(guild.id);
       if (!botGuild) return false;
@@ -210,7 +207,7 @@ app.get('/api/mutual-guilds', checkAuth, async (req, res) => {
     res.json(mutualGuilds);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Something went wrong.' });
+    res.status(500).json({ error: 'Une erreur est survenue.' });
   }
 });
 
@@ -218,7 +215,7 @@ app.get('/api/get-channels', checkAuth, async (req, res) => {
   const guildId = req.query.serverId;
   const guild = client.guilds.cache.get(guildId);
   if (!guild) {
-    return res.status(404).json({ error: 'Guild not found' });
+    return res.status(404).json({ error: 'Serveur introuvable.' });
   }
   const channels = guild.channels.cache
     .filter(channel => channel.isTextBased())
@@ -230,29 +227,27 @@ app.post('/api/save-log-channel', checkAuth, async (req, res) => {
   const guildId = req.query.serverId;
   const guild = client.guilds.cache.get(guildId);
   if (!guild) {
-    return res.status(404).json({ error: 'Guild not found' });
+    return res.status(404).json({ error: 'Serveur introuvable.' });
   }
 
   const { logChannel } = req.body;
   if (!logChannel) {
-    return res.status(400).json({ error: 'Log channel is required' });
+    return res.status(400).json({ error: 'Le salon de logs est requis.' });
   }
 
-  // Here you would save the log channel to your config
-  // For example, using a utility function to write to a config file
   const logChannelObj = guild.channels.cache.get(logChannel);
   if (!logChannelObj) {
-    return res.status(400).json({ error: 'Log channel not found in this guild.' });
+    return res.status(400).json({ error: 'Salon de log introuvable dans ce serveur.' });
   }
   writeToConfig(guildId, { logChannel: logChannelObj.id });
   res.json({ success: true, logChannel: logChannelObj.id });
 });
 
-// Endpoint to get the current log channel for a guild
+// Chemin pour obtenir le salon de logs du serveur
 app.get('/api/get-log-channel', checkAuth, async (req, res) => {
   const guildId = req.query.serverId;
   if (!guildId) {
-    return res.status(400).json({ error: 'Missing serverId' });
+    return res.status(400).json({ error: 'Identifiant du serveur introuvable.' });
   }
   try {
     const config = loadConfig(guildId);
@@ -262,7 +257,7 @@ app.get('/api/get-log-channel', checkAuth, async (req, res) => {
     return res.json({ logChannel: config.logChannel });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: 'Could not load log channel' });
+    return res.status(500).json({ error: 'Impossible de charger le serveur de logs.' });
   }
 });
 
@@ -279,7 +274,7 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'panel', 'index.html'));
 });
 
-// Start Express server
+// Démarrer le serveur Express
 app.listen(process.env.PORT, () => {
   console.log('✅ Serveur connecté!');
 });

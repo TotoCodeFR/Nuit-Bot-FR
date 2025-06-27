@@ -6,10 +6,10 @@ import { loadConfig } from './server_config.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-function log(data, guild) {
+function log(data, guild, channelId) {
 	const config = loadConfig(guild.id);
 
-	const channel = guild.channels.fetch(config.logChannel)
+	const channel = guild.channels.fetch(channelId || config.logChannel)
 
 	const embed = new EmbedBuilder()
 		.setColor(data.color || '#0099ff')
